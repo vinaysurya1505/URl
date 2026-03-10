@@ -1,10 +1,42 @@
+'use client';
+
 import { getAllEntries } from '@/lib/entries';
+import { useEffect, useState } from 'react';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+interface Entry {
+  number: number;
+  topic: string;
+  url: string;
+}
 
-export default async function HomePage() {
-  const entries = await getAllEntries();
+export default function HomePage() {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadEntries = async () => {
+      const data = await getAllEntries();
+      setEntries(data);
+      setLoading(false);
+    };
+    loadEntries();
+  }, []);
+
+  const handleCopyUrl = (entryUrl: string, entryNumber: number) => {
+    navigator.clipboard.writeText(entryUrl).then(() => {
+      setCopiedId(entryNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">Loading entries...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,16 +69,27 @@ export default async function HomePage() {
                 <div className="font-medium text-gray-900">
                   {entry.number}. {entry.topic}
                 </div>
-                <div className="mt-1">
-                  <span className="text-gray-500 text-sm">URL: </span>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="text-gray-500 text-sm whitespace-nowrap">URL: </span>
                   <a
                     href={entry.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-500 hover:underline text-sm break-all"
+                    className="text-blue-600 hover:text-blue-500 hover:underline text-sm break-all flex-1"
                   >
                     {entry.url}
                   </a>
+                  <button
+                    onClick={() => handleCopyUrl(entry.url, entry.number)}
+                    className={`flex-shrink-0 px-2 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap ${
+                      copiedId === entry.number
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                    title="Copy URL"
+                  >
+                    {copiedId === entry.number ? '✓ Copied' : '📋 Copy'}
+                  </button>
                 </div>
               </div>
             ))}
