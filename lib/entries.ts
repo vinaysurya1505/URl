@@ -7,17 +7,32 @@ export interface Entry {
   url: string;
 }
 
-const CONTENT_DIR = path.join(process.cwd(), 'content');
-const ENTRIES_FILE = path.join(CONTENT_DIR, 'entries.md');
+// Get the entries file path reliably
+function getEntriesFilePath(): string {
+  try {
+    return path.join(process.cwd(), 'content', 'entries.md');
+  } catch (error) {
+    // Fallback for edge cases
+    return path.join(__dirname, '..', '..', 'content', 'entries.md');
+  }
+}
+
+const ENTRIES_FILE = getEntriesFilePath();
+const CONTENT_DIR = path.dirname(ENTRIES_FILE);
 
 // Ensure the content directory and file exist
 function ensureContentFile(): void {
-  if (!fs.existsSync(CONTENT_DIR)) {
-    fs.mkdirSync(CONTENT_DIR, { recursive: true });
-  }
-  
-  if (!fs.existsSync(ENTRIES_FILE)) {
-    fs.writeFileSync(ENTRIES_FILE, '# Entries\n\n', 'utf-8');
+  try {
+    if (!fs.existsSync(CONTENT_DIR)) {
+      fs.mkdirSync(CONTENT_DIR, { recursive: true });
+    }
+    
+    if (!fs.existsSync(ENTRIES_FILE)) {
+      fs.writeFileSync(ENTRIES_FILE, '# Entries\n\n', 'utf-8');
+    }
+  } catch (error) {
+    console.error('Failed to ensure content file:', error);
+    throw new Error(`Failed to access entries file at ${ENTRIES_FILE}: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
