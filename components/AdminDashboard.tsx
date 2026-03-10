@@ -14,6 +14,46 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [recentEntries, setRecentEntries] = useState<Entry[]>([]);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/add-entry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ topic, url }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage({ type: 'error', text: data.error || 'Failed to add entry' });
+        return;
+      }
+
+      setMessage({ type: 'success', text: `Entry #${data.entry.number} added successfully!` });
+      setRecentEntries(prev => [data.entry, ...prev].slice(0, 5));
+      setTopic('');
+      setUrl('');
+    } catch (err) {
+      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyUrl = (entryUrl: string, entryNumber: number) => {
+    navigator.clipboard.writeText(entryUrl).then(() => {
+      setCopiedId(entryNumber);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,18 +165,31 @@ export default function AdminDashboard() {
         {recentEntries.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Recently Added</h2>
-            <ul className="space-y-3">
+            <ul className="space-y-4">
               {recentEntries.map((entry) => (
-                <li key={entry.number} className="border-b border-gray-100 pb-3 last:border-0">
-                  <p className="text-sm font-medium text-gray-900">{entry.topic}</p>
-                  <a
-                    href={entry.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-500 break-all"
-                  >
-                    {entry.url}
-                  </a>
+                <li key={entry.number} className="border-b border-gray-100 pb-4 last:border-0">
+                  <p className="text-sm font-medium text-gray-900 mb-2">{entry.topic}</p>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={entry.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-500 break-all flex-1"
+                    >
+                      {entry.url}
+                    </a>
+                    <button
+                      onClick={() => handleCopyUrl(entry.url, entry.number)}
+                      className={`flex-shrink-0 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        copiedId === entry.number
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      title="Copy URL"
+                    >
+                      {copiedId === entry.number ? '✓ Copied' : '📋 Copy'}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
