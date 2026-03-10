@@ -1,91 +1,86 @@
-import fs from 'fs';
-import path from 'path';
+import { db } from './firebase';
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  getDocs,
+  getCountFromServer,
+  QueryConstraint,
+  where,
+} from 'firebase/firestore';
 
 export interface Entry {
+  id?: string;
   number: number;
   topic: string;
   url: string;
+  createdAt?: number;
 }
 
-// Get the entries file path reliably
-function getEntriesFilePath(): string {
+const ENTRIES_COLLECTION = 'entries';
+
+// Read all entries from Firestore
+export async function readEntries(): Promise<Entry[]> {
   try {
-    return path.join(process.cwd(), 'content', 'entries.md');
-  } catch (error) {
-    // Fallback for edge cases
-    return path.join(__dirname, '..', '..', 'content', 'entries.md');
-  }
-}
-
-const ENTRIES_FILE = getEntriesFilePath();
-const CONTENT_DIR = path.dirname(ENTRIES_FILE);
-
-// Ensure the content directory and file exist
-function ensureContentFile(): void {
-  try {
-    if (!fs.existsSync(CONTENT_DIR)) {
-      fs.mkdirSync(CONTENT_DIR, { recursive: true });
-    }
-    
-    if (!fs.existsSync(ENTRIES_FILE)) {
-      fs.writeFileSync(ENTRIES_FILE, '# Entries\n\n', 'utf-8');
-    }
-  } catch (error) {
-    console.error('Failed to ensure content file:', error);
-    throw new Error(`Failed to access entries file at ${ENTRIES_FILE}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
-}
-
-// Read all entries from the markdown file
-export function readEntries(): Entry[] {
-  ensureContentFile();
-  
-  const content = fs.readFileSync(ENTRIES_FILE, 'utf-8');
-  const entries: Entry[] = [];
-  
-  // Parse entries using regex
-  // Format: 1. Topic: Example Topic\n   URL: https://example.com
-  const entryRegex = /(\d+)\.\s*Topic:\s*(.+?)\n\s*URL:\s*(.+?)(?=\n\d+\.|$)/gs;
-  
-  let match;
-  while ((match = entryRegex.exec(content)) !== null) {
-    entries.push({
-      number: parseInt(match[1], 10),
-      topic: match[2].trim(),
-      url: match[3].trim(),
+    const q = query(
+      collection(db, ENTRIES_COLLECTION),
+      orderBy('number', 'asc')
+    );
+    const querySnapshot = await getDocs(q);
+    const entries: Entry[] = [];
+    querySnapshot.forEach((doc) => {
+      entries.push({
+        id: doc.id,
+        ...doc.data(),
+      } as Entry);
     });
+    return entries;
+  } catch (error) {
+    console.error('Error reading entries:', error);
+    return [];
   }
-  
-  return entries;
 }
 
 // Get the next entry number
-export function getNextEntryNumber(): number {
-  const entries = readEntries();
-  if (entries.length === 0) {
+export async function getNextEntryNumber(): Promise<number> {
+  try {
+    const entries = await readEntries();
+    if (entries.length === 0) {
+      return 1;
+    }
+    return Math.max(...entries.map(e => e.number)) + 1;
+  } catch (error) {
+    console.error('Error getting next entry number:', error);
     return 1;
   }
-  return Math.max(...entries.map(e => e.number)) + 1;
 }
 
-// Add a new entry to the markdown file
-export function addEntry(topic: string, url: string): Entry {
-  ensureContentFile();
-  
-  const nextNumber = getNextEntryNumber();
-  
-  const entryText = `${nextNumber}. Topic: ${topic}\n   URL: ${url}\n\n`;
-  
-  fs.appendFileSync(ENTRIES_FILE, entryText, 'utf-8');
-  
-  return {
-    number: nextNumber,
-    topic,
-    url,
-  };
+// Add a new entry to Firestore
+export async function addEntry(topic: string, url: string): Promise<Entry> {
+  try {
+    const nextNumber = await getNextEntryNumber();
+    
+    const newEntry = {
+      number: nextNumber,
+      topic,
+      url,
+      createdAt: Date.now(),
+    };
+    
+    const docRef = await addDoc(collection(db, ENTRIES_COLLECTION), newEntry);
+    
+    return {
+      id: docRef.id,
+      ...newEntry,
+    };
+  } catch (error) {
+    console.error('Error adding entry:', error);
+    throw new Error(`Failed to add entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 // Get all entries for display
-export function getAllEntries(): Entry[] {
+export async function getAllEntries(): Promise<Entry[]> {
   return readEntries();
 }

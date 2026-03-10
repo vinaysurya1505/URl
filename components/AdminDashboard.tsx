@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface Entry {
   number: number;
@@ -15,7 +14,6 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [recentEntries, setRecentEntries] = useState<Entry[]>([]);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,36 +47,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
-      router.refresh();
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <div className="flex gap-4">
-            <a
-              href="/"
-              className="text-blue-600 hover:text-blue-500 text-sm font-medium"
-            >
-              View Homepage
-            </a>
-            <button
-              onClick={handleLogout}
-              className="text-red-600 hover:text-red-500 text-sm font-medium"
-            >
-              Logout
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Add New Entry</h1>
+          <a
+            href="/"
+            className="text-blue-600 hover:text-blue-500 text-sm font-medium"
+          >
+            View Homepage
+          </a>
         </div>
       </header>
 
@@ -86,7 +66,7 @@ export default function AdminDashboard() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Add Entry Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Add New Entry</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Submit Entry</h2>
           
           {message && (
             <div
@@ -148,6 +128,24 @@ export default function AdminDashboard() {
             <ul className="space-y-3">
               {recentEntries.map((entry) => (
                 <li key={entry.number} className="border-b border-gray-100 pb-3 last:border-0">
+                  <p className="text-sm font-medium text-gray-900">{entry.topic}</p>
+                  <a
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:text-blue-500 break-all"
+                  >
+                    {entry.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
                   <div className="font-medium text-gray-900">
                     {entry.number}. {entry.topic}
                   </div>
