@@ -55,38 +55,6 @@ export default function AdminDashboard() {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/add-entry', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ topic, url }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage({ type: 'error', text: data.error || 'Failed to add entry' });
-        return;
-      }
-
-      setMessage({ type: 'success', text: `Entry #${data.entry.number} added successfully!` });
-      setRecentEntries(prev => [data.entry, ...prev].slice(0, 5));
-      setTopic('');
-      setUrl('');
-    } catch (err) {
-      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
