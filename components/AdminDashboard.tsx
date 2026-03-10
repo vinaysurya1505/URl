@@ -146,23 +146,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-                  <div className="font-medium text-gray-900">
-                    {entry.number}. {entry.topic}
-                  </div>
-                  <a
-                    href={entry.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-500 break-all"
-                  >
-                    {entry.url}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}

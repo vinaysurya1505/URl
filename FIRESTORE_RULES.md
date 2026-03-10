@@ -1,3 +1,4 @@
+
 # Firestore Security Rules
 
 Copy and paste the following rules into your Firestore Database Rules at [Firebase Console](https://console.firebase.google.com/project/entries-ca0ea/firestore/rules):
