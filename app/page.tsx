@@ -51,13 +51,6 @@ export default function HomePage() {
       return;
     }
 
-    // Validate file is a zip
-    if (!file.name.endsWith('.zip')) {
-      setUploadStatus('Please upload a .zip file');
-      setTimeout(() => setUploadStatus(null), 3000);
-      return;
-    }
-
     setUploading(true);
     setUploadStatus(null);
 
@@ -176,10 +169,9 @@ export default function HomePage() {
                 className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
               />
               <label className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium cursor-pointer hover:bg-blue-700 disabled:opacity-50">
-                {uploading ? '⏳ Uploading...' : '📁 Select .zip'}
+                {uploading ? '⏳ Uploading...' : '📁 Select File'}
                 <input
                   type="file"
-                  accept=".zip"
                   onChange={handleFileUpload}
                   disabled={uploading || !fileTitle.trim()}
                   className="hidden"

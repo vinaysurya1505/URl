@@ -23,14 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file is zip
-    if (!file.name.endsWith('.zip')) {
-      return NextResponse.json(
-        { error: 'Only .zip files are allowed' },
-        { status: 400 }
-      );
-    }
-
     // Validate file size (max 500MB)
     const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
