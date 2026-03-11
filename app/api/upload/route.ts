@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes } from 'firebase/storage';
+import { addUploadMetadata } from '@/lib/uploads';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const title = formData.get('title') as string;
 
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    if (!title || title.trim() === '') {
+      return NextResponse.json(
+        { error: 'Title is required' },
         { status: 400 }
       );
     }
@@ -51,10 +60,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Save metadata to Firestore
+    const uploadId = await addUploadMetadata(
+      title,
+      file.name,
+      file.size,
+      snapshot.metadata.fullPath
+    );
+
     return NextResponse.json(
       {
         success: true,
         message: 'File uploaded successfully',
+        uploadId,
+        title,
         fileName: file.name,
         size: file.size,
         path: snapshot.metadata.fullPath,
