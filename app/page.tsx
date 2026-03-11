@@ -13,6 +13,8 @@ export default function HomePage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const loadEntries = async () => {
@@ -30,6 +32,48 @@ export default function HomePage() {
     });
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file is a zip
+    if (!file.name.endsWith('.zip')) {
+      setUploadStatus('Please upload a .zip file');
+      setTimeout(() => setUploadStatus(null), 3000);
+      return;
+    }
+
+    setUploading(true);
+    setUploadStatus(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      setUploadStatus(`✓ File uploaded successfully: ${data.fileName}`);
+      setTimeout(() => setUploadStatus(null), 3000);
+
+      // Reset file input
+      e.target.value = '';
+    } catch (error) {
+      setUploadStatus('Error uploading file. Please try again.');
+      console.error('Upload error:', error);
+      setTimeout(() => setUploadStatus(null), 3000);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -44,13 +88,36 @@ export default function HomePage() {
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Entries List</h1>
-          <a
-            href="/admin"
-            className="text-sm text-blue-600 hover:text-blue-500 font-medium"
-          >
-            Add Entry →
-          </a>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="file-upload"
+                className="text-sm text-blue-600 hover:text-blue-500 font-medium cursor-pointer"
+              >
+                {uploading ? '⏳ Uploading...' : '📤 Upload Files'}
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept=".zip"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+            </div>
+            <a
+              href="/admin"
+              className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+            >
+              Add Entry →
+            </a>
+          </div>
         </div>
+        {uploadStatus && (
+          <div className="bg-blue-50 border-t border-blue-200 px-4 py-2">
+            <p className="text-sm text-blue-700 text-center">{uploadStatus}</p>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
