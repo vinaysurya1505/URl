@@ -5,7 +5,6 @@ Copy and paste the following rules into your Firestore Database Rules at [Fireba
 
 ## Rules Configuration
 
-```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -15,6 +14,14 @@ service cloud.firestore {
       allow create: if validateEntry(request.resource.data);
       allow update: if false;
       allow delete: if false;
+    }
+    
+    // Allow anyone to read and create uploads
+    match /uploads/{document=**} {
+      allow read: if true;
+      allow create: if validateUpload(request.resource.data);
+      allow update: if false;
+      allow delete: if true;
     }
     
     // Deny access to all other collections
@@ -32,7 +39,15 @@ function validateEntry(data) {
          data.topic.size() > 0 &&
          data.url.size() > 0;
 }
-```
+
+function validateUpload(data) {
+  return data.keys().hasAll(['title', 'fileName', 'size', 'path', 'uploadedAt']) &&
+         data.title is string &&
+         data.fileName is string &&
+         data.size is int &&
+         data.path is string &&
+         data.title.size() > 0;
+}
 
 ## Steps to Deploy Rules
 

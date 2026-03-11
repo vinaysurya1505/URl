@@ -6,6 +6,10 @@ const nextConfig = {
       allowedOrigins: ['localhost:3000'],
     },
   },
-}
+  // Increase API payload size to 500mb
+  api: {
+    responseLimit: '500mb',
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
